@@ -1388,11 +1388,20 @@ fn change_char(cx: &mut Context, inclusive: bool, extend: bool) {
             } => ch,
             _ => return,
         };
-        find_char_impl(cx.editor, &find_next_char_impl, inclusive, extend, ch, count);
+        find_char_impl(
+            cx.editor,
+            &find_next_char_impl,
+            inclusive,
+            extend,
+            ch,
+            count,
+        );
 
         let (view, doc) = current!(cx.editor);
         let selection = doc.selection(view.id);
-        let transaction = Transaction::change_by_selection(doc.text(), selection, |range| (range.from(), range.to(), None));
+        let transaction = Transaction::change_by_selection(doc.text(), selection, |range| {
+            (range.from(), range.to(), None)
+        });
         doc.apply(&transaction, view.id);
         enter_insert_mode(cx)
     });
@@ -1408,11 +1417,20 @@ fn delete_char(cx: &mut Context, inclusive: bool, extend: bool) {
             } => ch,
             _ => return,
         };
-        find_char_impl(cx.editor, &find_next_char_impl, inclusive, extend, ch, count);
+        find_char_impl(
+            cx.editor,
+            &find_next_char_impl,
+            inclusive,
+            extend,
+            ch,
+            count,
+        );
 
         let (view, doc) = current!(cx.editor);
         let selection = doc.selection(view.id);
-        let transaction = Transaction::delete_by_selection(doc.text(), selection, |range| (range.from(), range.to()));
+        let transaction = Transaction::delete_by_selection(doc.text(), selection, |range| {
+            (range.from(), range.to())
+        });
         doc.apply(&transaction, view.id);
     });
 }
