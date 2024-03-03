@@ -507,7 +507,10 @@ impl MappableCommand {
         command_palette, "Open command palette",
         goto_word, "Jump to a two-character label",
         extend_to_word, "Extend to a two-character label",
+        delete_till_char, "Delete till next occurrence of char",
+        delete_next_char, "Delete next occurrence of char",
         change_till_char, "Change till next occurrence of char",
+        change_next_char, "Change next occurrence of char",
     );
 }
 
@@ -1392,6 +1395,25 @@ fn change_char(cx: &mut Context, inclusive: bool, extend: bool) {
         let transaction = Transaction::change_by_selection(doc.text(), selection, |range| (range.from(), range.to(), None));
         doc.apply(&transaction, view.id);
         enter_insert_mode(cx)
+    });
+}
+
+fn delete_char(cx: &mut Context, inclusive: bool, extend: bool) {
+    let count = cx.count();
+    cx.on_next_key(move |cx: &mut Context, event| {
+        let ch = match event {
+            KeyEvent {
+                code: KeyCode::Char(ch),
+                ..
+            } => ch,
+            _ => return,
+        };
+        find_char_impl(cx.editor, &find_next_char_impl, inclusive, extend, ch, count);
+
+        let (view, doc) = current!(cx.editor);
+        let selection = doc.selection(view.id);
+        let transaction = Transaction::delete_by_selection(doc.text(), selection, |range| (range.from(), range.to()));
+        doc.apply(&transaction, view.id);
     });
 }
 
@@ -2730,8 +2752,20 @@ fn change_selection_noyank(cx: &mut Context) {
     delete_selection_impl(cx, Operation::Change);
 }
 
+fn delete_till_char(cx: &mut Context) {
+    delete_char(cx, false, false)
+}
+
+fn delete_next_char(cx: &mut Context) {
+    delete_char(cx, true, false)
+}
+
 fn change_till_char(cx: &mut Context) {
     change_char(cx, false, false);
+}
+
+fn change_next_char(cx: &mut Context) {
+    change_char(cx, true, false)
 }
 
 fn collapse_selection(cx: &mut Context) {
