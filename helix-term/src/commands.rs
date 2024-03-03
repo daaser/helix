@@ -507,6 +507,7 @@ impl MappableCommand {
         command_palette, "Open command palette",
         goto_word, "Jump to a two-character label",
         extend_to_word, "Extend to a two-character label",
+        change_till_char, "Change till next occurrence of char",
     );
 }
 
@@ -1372,6 +1373,26 @@ fn find_char_line_ending(
         }
     });
     doc.set_selection(view.id, selection);
+}
+
+fn change_char(cx: &mut Context, inclusive: bool, extend: bool) {
+    let count = cx.count();
+    cx.on_next_key(move |cx: &mut Context, event| {
+        let ch = match event {
+            KeyEvent {
+                code: KeyCode::Char(ch),
+                ..
+            } => ch,
+            _ => return,
+        };
+        find_char_impl(cx.editor, &find_next_char_impl, inclusive, extend, ch, count);
+
+        let (view, doc) = current!(cx.editor);
+        let selection = doc.selection(view.id);
+        let transaction = Transaction::change_by_selection(doc.text(), selection, |range| (range.from(), range.to(), None));
+        doc.apply(&transaction, view.id);
+        enter_insert_mode(cx)
+    });
 }
 
 fn find_char(cx: &mut Context, direction: Direction, inclusive: bool, extend: bool) {
@@ -2707,6 +2728,10 @@ fn change_selection(cx: &mut Context) {
 fn change_selection_noyank(cx: &mut Context) {
     cx.register = Some('_');
     delete_selection_impl(cx, Operation::Change);
+}
+
+fn change_till_char(cx: &mut Context) {
+    change_char(cx, false, false);
 }
 
 fn collapse_selection(cx: &mut Context) {
